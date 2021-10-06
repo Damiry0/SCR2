@@ -1,0 +1,11 @@
+#!/bin/bash
+read -r mask_filename days tar_filename
+echo var1=$mask_filename var2=$days var3=$tar_filename
+
+if [ -z "$mask_filename" ] || [ -z "$days" ] || [ -z "$tar_filename" ]
+then
+    echo Not given all arguments
+else
+    echo dalej
+    find . -type f -iname "*.$mask_filename" -type f -mtime -"$days" -exec tar -rvf "$tar_filename.tar" {} \;
+fi  #find all files in directory by name ignoring case
