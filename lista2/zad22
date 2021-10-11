@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for adres in $(cat adresy.txt)
+do
+    echo tresc.txt | mutt -s "Mail testowy" "$adres" -a spec*.pdf 
+done    
