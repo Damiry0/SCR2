@@ -1,0 +1,2 @@
+echo "skrypt 2"
+./sh3 & sleep 200

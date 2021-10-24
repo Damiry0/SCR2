@@ -1,0 +1,19 @@
+Zadanie 7
+Aby sprawdzić wartość priorytetów i ich liczby nice wystarczy użyć polecenia:
+$ top
+Możemy wtedy zobaczyć wartości PR i NI:
+* NI to wartość nice, która pozwala nam zmieniać priorytet procesów
+  w zakresie od (-20 do 19)
+* PR to aktualny priotytet procesu
+
+Aby ustawić proces z zmodyfikowym priorytetem używamy polecenia:
+
+nice -n wartość_nice uruchamiany_program
+
+Możemy również zmienić priorytet aplikacji już działających:
+
+renice -n wartość_nice -p -pid 
+
+Polecenia zmieniające priorytet procesów mogą być przydatne szczególnie podczas
+pracy nad dużymi plikami czy procesami zajmującymi wiele czasu. Możemy wtedy
+wskazać systemowi, które z tych plików potrzebujemy najpierw co może usprawnić nam prace.

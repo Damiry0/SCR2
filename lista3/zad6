@@ -1,0 +1,13 @@
+Zadanie 6
+Napisałem krótki skrypt wyświetlający tekst w nieskonczonej pętli.
+Ctrl+z działa identycznie jak wysłanie procesowi sygnału SIGSTOP, natomiast
+polecenie SIGCONT działa bliżej jak fg.
+
+Polecenie wybudzone przy pomocy fg umieszcza aplikacje na pierwszym
+planie przez co można ją uśpić lub zabić przy pomocy ctrl+z/ctrl+c,
+jak użyje się bg to aplikacja umieszcza się z tyłu przez co jest 
+cały czas wykonana ale jednocześnie nie mamy nad nią tak łatwej kontroli.
+Taką aplikacje musimy już recznie zabić lub wywołać na pierwszy plan
+używając ponownie fg. 
+
+Skrypt do zadanie zad66

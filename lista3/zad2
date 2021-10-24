@@ -1,0 +1,9 @@
+Zadanie 2
+Napisałem 3 krótkie skrypty, które uruchamiały siebie nawzajem a następnie
+zasypiały na okres 200 sekund. Po zabiciu środkowego procesu skrypt 3 został
+prawidłowo adoptowany przez proces init.
+
+Wynik testów poniżej:
+https://i.imgur.com/BAZV95n.png
+
+skrypty do zadanie: sh1,sh2,sh3
