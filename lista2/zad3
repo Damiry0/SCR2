@@ -1,5 +1,5 @@
 #!/bin/bash
-read -r mask_filename days tar_filename
+read -r mask_filename days tar_filename 
 
 if [ -z "$mask_filename" ] || [ -z "$days" ] || [ -z "$tar_filename" ]
 then

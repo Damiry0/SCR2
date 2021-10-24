@@ -1,0 +1,19 @@
+Strace to narzędzie diagnostyczne do śledzenia sygnałów systemowych.
+Najważniejsze funkcje:
+ - Rozpoczęcie śledzenia specyficznego procesu po jego PID:
+   strace -p {{pid}}
+
+ - Śledzenie procesu i filtrowanie wyjścia w zależności od odpowiedzi systemu:
+   strace -p {{pid}} -e {{system_call_name}}
+
+ - Liczenie czasu, syngałów i błędów przy każdej odpowiedzi systemu i wysłanie raportu na wyjście:
+   strace -p {{pid}} -c
+
+ - Pokaż wykorzystany czas przy każdym wywołaniu systemu:
+   strace -p {{pid}} -T
+
+ - Rozpocznij śledzenie programu poprzez uruchomienie go:
+   strace {{program}}
+
+ - Rozpocznij śledzenie operacji wywołanych przez program:
+   strace -e trace=file {{program}}

@@ -2,7 +2,7 @@
 LC_ALL=C
 if [[ $(date +%u) -gt 5 ]]; # %u dzien tygodnia(1,7) -gt wieksze od
 then
-    echo " weekend";
+    echo "weekend";
 else
     echo "nie weekend";
 fi

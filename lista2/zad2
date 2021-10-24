@@ -1,7 +1,7 @@
 #!/bin/bash
 
-while [ read line ]; do
-    echo $line;
-    mutt -s "text" -a "spec*.pdf" "adres" < /dev/null
-done < addreses
+while adres=$(cat < adresy.txt) ; do
+    mutt -a spec*.pdf -s tresc.txt "$adres"
+    # -a /attach 
+done < adres
 

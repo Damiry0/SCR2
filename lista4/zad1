@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# This script opens 4 terminal windows.
+
+export i=0;
+
+while : 
+do
+i=(i+1);
+sleep 1
+# podpunkt a)
+if[]
+done
+
+# top -u 30  //zmiana czestotliwosci odswiezania polecia top
