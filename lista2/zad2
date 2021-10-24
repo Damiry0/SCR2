@@ -1,7 +1,14 @@
 #!/bin/bash
 
+<<<<<<< HEAD
 while adres=$(cat < adresy.txt) ; do
     mutt -a spec*.pdf -s tresc.txt "$adres"
     # -a /attach 
 done < adres
 
+=======
+for adres in $(cat adresy.txt)
+do
+    echo tresc.txt | mutt -s "Mail testowy" "$adres" -a spec*.pdf 
+done    
+>>>>>>> 60cf242aae68ee5f0c51d2a67d739fb6d111b493
