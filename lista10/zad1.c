@@ -3,18 +3,29 @@
 #include <stdlib.h>
 #include <openssl/evp.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #define BUF_SIZE 1000
+#define PASS_LENGTH 33
 
-struct leak
-        {
-            int id;
-            char MD5_password[33];
-            char* email;
-            char* username;
-        };
+//struct leak
 
-FILE *dict,*pass;
+//        {
+//            int id;
+//            char MD5_password[33];
+//            char* email;
+//            char* username;
+//        };
+
+FILE *dict, *pass;
+char *filenamePasswords = "/home/damiry/Desktop/SCR/SCR2/lista10/test-data1.txt";
+char *filenameDictionaries = "/home/damiry/Desktop/SCR/SCR2/lista10/test-dict-mini.txt";
+
+
+int countLinesInFile(FILE *fp);
+int longestLineInFile(FILE *fp);
+
+
 
 //void bytes2md5(const char *data, int len, char *md5buf) {
 //    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
@@ -30,46 +41,72 @@ FILE *dict,*pass;
 //    }
 //}
 
+int main() {
+// passwords
+    char passwords[1000][PASS_LENGTH];
+    if ((pass = fopen(filenamePasswords, "r")) == NULL) {
+        printf("Error! opening file"); // Program exits if the file pointer returns NULL.
+        exit(1);
+    }
+    struct stat statsPasswords;
+    stat(filenamePasswords, &statsPasswords);
+    int sizePasswords = statsPasswords.st_size / PASS_LENGTH;
 
-int countLines()
-{
-    int count=1; // counting EOF as well
-    for (char c = getc(dict); c != EOF; c = getc(dict))
-        if (c == '\n') // Increment count if this character is newline
-            count = count + 1;
+    for (int i = 0; i < sizePasswords; i++) {
+        fscanf(pass, "%s", passwords[i]); //"%s%*c"
+    }
+    for (int i = 0; i < sizePasswords; i++) {
+        printf("%d : %s \n", i, passwords[i]);
+    }
+
+    // dictionaries
+    if ((dict = fopen(filenameDictionaries, "r")) == NULL) {
+        printf("Error! opening file"); // Program exits if the file pointer returns NULL.
+        exit(1);
+    }
+    int lines = countLinesInFile(dict);
+    char dictionaries[lines][longestLineInFile(dict)];
+    for (int i = 0; i < lines; i++) {
+        fscanf(dict, "%s", dictionaries[i]);
+    }
+    for (int i = 0; i < lines; i++) {
+        printf("%d : %s \n", i, dictionaries[i]);
+    }
+
+    fclose(dict);
+    fclose(pass);
+    return 0;
+}
+
+int countLinesInFile(FILE *fp) {
+    char c;
+    int count = 1;
+    for (c = getc(fp); c != EOF; c = getc(fp))
+        if (c == '\n')
+        {count++;}
+
+    rewind(fp);
     return count;
 }
-void loadPassword()
-{
-    struct leak leakedPassowords;
-    if ((pass = fopen("/home/damiry/Desktop/SCR/SCR2/lista10/test-data1.txt", "r")) == NULL ){
-        printf("Error! opening file"); // Program exits if the file pointer returns NULL.
+int longestLineInFile(FILE *fp) {
+    int largest = 0, current = 0;// Line counter (result)
+    char c;  // To store a character read from file
+    if (fp == NULL) {
+        printf("Error! opening file");
         exit(1);
     }
-
-    while (fscanf(pass,"%d  %s  %s  %s",&leakedPassowords.id,leakedPassowords.MD5_password,leakedPassowords.email,leakedPassowords.username))
-    // close file
-    fclose (pass);
-}
-
-int main()
-{
-    char buf[BUF_SIZE];
-    if ((dict = fopen("/home/damiry/Desktop/SCR/SCR2/lista10/test-dict-mini.txt", "r")) == NULL  ){
-        printf("Error! opening file"); // Program exits if the file pointer returns NULL.
-        exit(1);
+    for (c = getc(fp); c != EOF; c = getc(fp)) {
+        if (c == '\n') {
+            if (current > largest) {
+                largest = current;
+            }
+            current = 0;
+        } else {
+            current++;
+        }
     }
-    printf("Number of lines:%d",countLines());
-    int numberOfLines= countLines();
-     char *strs[numberOfLines];
-    for (int i = 0; i < numberOfLines; ++i) {
-//        getline()
-//        strcpy(strs[i],buf);
-//        printf("%s \n",buf);
-    }
-   // loadPassword();
-    fclose(dict);
-    return 0;
+    rewind(fp);
+    return largest;
 }
 
 
