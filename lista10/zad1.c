@@ -4,6 +4,7 @@
 #include <openssl/evp.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <ctype.h>
 
 #define BUF_SIZE 1000
 #define PASS_LENGTH 33
@@ -23,6 +24,7 @@ char *filenameDictionaries = "/home/damiry/Desktop/SCR/SCR2/lista10/test-dict-mi
 
 
 int countLinesInFile(FILE *fp);
+
 int longestLineInFile(FILE *fp);
 
 
@@ -41,9 +43,18 @@ int longestLineInFile(FILE *fp);
 //    }
 //}
 
+int checkLetter(const char *tab, int x) {
+    for (int j = 0; j < x; ++j) {
+        if (islower(tab[0]) && (islower(tab[1]))) return 0;
+        else if (isupper(tab[0]) && (islower(tab[1]))) return 1;
+        else if (isupper(tab[0]) && (isupper(tab[1]))) return 2;
+    }
+    return -1;
+}
+
 int main() {
 // passwords
-    char passwords[1000][PASS_LENGTH];
+    char passwords[BUF_SIZE][PASS_LENGTH];
     if ((pass = fopen(filenamePasswords, "r")) == NULL) {
         printf("Error! opening file"); // Program exits if the file pointer returns NULL.
         exit(1);
@@ -66,12 +77,38 @@ int main() {
     }
     int lines = countLinesInFile(dict);
     char dictionaries[lines][longestLineInFile(dict)];
+    char dictionariesFull[2][lines][longestLineInFile(dict)];
+    int countConsumer0 = 0,countConsumer1=0,countConsumer2=0;
     for (int i = 0; i < lines; i++) {
         fscanf(dict, "%s", dictionaries[i]);
+        switch (checkLetter(dictionaries[i],lines)) {
+            case 0:
+            {
+                strcpy(dictionariesFull[0][countConsumer0],dictionaries[i]);
+                countConsumer0++;
+            }
+            break;
+            case 1:
+            {
+                strcpy(dictionariesFull[1][countConsumer1],dictionaries[i]);
+                countConsumer1++;
+            }
+            break;
+            case 2:
+            {
+                strcpy(dictionariesFull[2][countConsumer2],dictionaries[i]);
+                countConsumer2++;
+            }
+            break;
+        }
     }
-    for (int i = 0; i < lines; i++) {
-        printf("%d : %s \n", i, dictionaries[i]);
+    printf("przerwa \n");
+    for (int i = 0; i < countConsumer2; i++) {
+        printf("%d : %s \n", i, dictionariesFull[2][i]);
     }
+    // watki
+    pthread_t consument;
+
 
     fclose(dict);
     fclose(pass);
@@ -82,12 +119,12 @@ int countLinesInFile(FILE *fp) {
     char c;
     int count = 1;
     for (c = getc(fp); c != EOF; c = getc(fp))
-        if (c == '\n')
-        {count++;}
+        if (c == '\n') { count++; }
 
     rewind(fp);
     return count;
 }
+
 int longestLineInFile(FILE *fp) {
     int largest = 0, current = 0;// Line counter (result)
     char c;  // To store a character read from file
