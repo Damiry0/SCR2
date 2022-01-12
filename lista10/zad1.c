@@ -200,6 +200,7 @@ bool checkPassword(char *tab) {
 
 void dictionaryAppending(char tab[], long tier) {
     char str[BUF_SIZE];
+    char str1[BUF_SIZE];
     long multiplicationFactor = pow(10, tier);
     int start;
     if (tier == 0)start = 0;
@@ -208,11 +209,12 @@ void dictionaryAppending(char tab[], long tier) {
     }
     char md5[33]; // 32 characters + null terminator
     for (int i = start * 10; i < 10 * multiplicationFactor; ++i) {
-        sprintf(str, "%d", i); // cyfry
+        sprintf(str, "%d", i);// cyfry
         char *tmp = strdup(tab);
         strcat(tmp, str); // po
         bytes2md5(tmp, strlen(tmp), md5);
         if(checkPassword(md5))strcpy(brokenDictionary,tmp);
+        tmp = strdup(tab);
         strcat(str, tmp); //przed
         bytes2md5(str, strlen(str), md5);
         if(checkPassword(md5))strcpy(brokenDictionary,str);
