@@ -54,14 +54,12 @@ void readPasswordsFile(FILE *fp) {
 }
 
 void *producer(void *vargp) {
-
-
     struct thread *o= (struct thread*)vargp;
     int size = o->size;
     for (int i = 0; i < size; i++)
     {
-        printf("id= %d ",o->id);
-        printf(" tab:%s \n",&o->tab[i]);
+        printf("prod= %d ",o->id);
+        printf("haslo:%s \n",&o->tab[i]);
     }
     for (int i = 0; i < size; i++) {
         char md5[33];
@@ -69,12 +67,12 @@ void *producer(void *vargp) {
         checkPassword(md5,&o->tab[i]);
     }
     int tier = 0;
-//    while (1) {
-//        for (int i = 0; i < size; i++) {
-//            dictionaryAppending(&o->tab[i], tier);
-//        }
-//        tier++;
-//    }
+    while (1) {
+        for (int i = 0; i < size; i++) {
+            dictionaryAppending(&o->tab[i], tier);
+        }
+        tier++;
+    }
 }
 
 
@@ -108,38 +106,11 @@ int main() {
                 break;
         }
     }
-    printf("przerwa \n");
-    for (int i = 0; i < countConsumer2; i++) {
-        printf("%d : %s \n", i, dictionariesFull[2][i]);
-    }
-    // dictionaries
-    //breaking
 
-//    for(int i=0;i<countConsumer2;i++)
-//    {
-//        char md5[33];
-//        bytes2md5(dictionariesFull[0][i], strlen(dictionariesFull[0][i]), md5);
-//        checkPassword(md5);
-//    }
-//
-//    int tier=0;
-//    for(int j=0;j<10;j++)
-//    {
-//        for(int i=0;i<countConsumer2;i++)
-//        {
-//            dictionaryAppending(dictionariesFull[0][i], tier);
-//        }
-//        tier++;
-//    }
 
-    printf("cos \n");
-
-    char** sorted_array_0;
-    char ** sorted_array_1;
-    char** sorted_array_2;
-    sorted_array_0 = malloc((countConsumer0) * sizeof(char*));
-    sorted_array_1= malloc((countConsumer1) * sizeof(char*));
-    sorted_array_2 = malloc((countConsumer2) * sizeof(char*));
+    char** sorted_array_0=malloc((countConsumer0) * sizeof(char*));
+    char ** sorted_array_1=malloc((countConsumer1) * sizeof(char*));
+    char** sorted_array_2=malloc((countConsumer2) * sizeof(char*));
     for (int i = 0; i < countConsumer0; i++)
     {
         strcpy(&sorted_array_0[i],dictionariesFull[0][i]);
@@ -153,11 +124,9 @@ int main() {
     {
         strcpy(&sorted_array_2[i],dictionariesFull[2][i]);
     }
-    char *** sorted_array[3];
-    sorted_array[0]=sorted_array_0;
-    sorted_array[1]=sorted_array_1; //HAHAHAHAHAHAHAHAHAHAHHAHAHHAHAH
-    sorted_array[2]=sorted_array_2;
-
+    char *** sorted_array[3]={
+        sorted_array_0,sorted_array_1,sorted_array_2
+    };
     int array_sizes[3]={
             countConsumer0,countConsumer1,countConsumer2
     };
@@ -245,7 +214,7 @@ void checkPassword(char *tab,char* passReal) {
     for (int i = 0; i < sizePasswords; ++i) {
         if (passwords[i][0] == '#') continue;
         if (strcmp(tab, passwords[i]) == 0) {
-            printf("Haslo zlamane: %s\n",passReal);
+            printf("Haslo zlamane: %s   Odpowiadajacy slownik: %s \n",passReal,tab);
             passwords[i][0] = '#';
             //TODO register that password and send to main pthread
         }
@@ -271,5 +240,3 @@ void dictionaryAppending(char tab[], long tier) {
         checkPassword(md5,str);
     }
 }
-
-
