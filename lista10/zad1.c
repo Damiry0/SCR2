@@ -14,6 +14,7 @@ FILE *dict, *pass;
 char *filenamePasswords = "/home/damiry/Desktop/SCR/SCR2/lista10/test-data1.txt";
 char *filenameDictionaries = "/home/damiry/Desktop/SCR/SCR2/lista10/test-dict-mini.txt";
 
+char passwords[BUF_SIZE][PASS_LENGTH];
 
 int countLinesInFile(FILE *fp);
 
@@ -23,42 +24,20 @@ int checkLetter(const char *tab, int x);
 
 void bytes2md5(const char *data, int len, char *md5buf);
 
-void passwordBreaking(char tab[],int tier)
-{
-    char str[BUF_SIZE];
-    long multiplicationFactor= pow(10,tier);
-    int start;
-    if(tier==0)start=0;
-    else
-    {
-        start= pow(10,tier-1);
-    }
-    char md5[33]; // 32 characters + null terminator
-    for (int i = start*10; i < 10*multiplicationFactor; ++i) {
+void dictionaryAppending(char tab[],long tier);
 
-            sprintf(str,"%d",i);
-            char* tmp=strdup(tab);
-            strcat(tmp,str); // po
-          //  bytes2md5(tmp, strlen(tmp), md5);
-           // if()
-          //  strcat(str,tmp); // przed
-           printf("poka:%s \n",tmp);
-    }
-    //passwordBreaking(tab,tier+1); // infite recursion
-}
-
+void checkPassword(char* tab);
 
 
 int main() {
 // passwords
-    char passwords[BUF_SIZE][PASS_LENGTH];
     if ((pass = fopen(filenamePasswords, "r")) == NULL) {
         printf("Error! opening file"); // Program exits if the file pointer returns NULL.
         exit(1);
     }
     struct stat statsPasswords;
     stat(filenamePasswords, &statsPasswords);
-    int sizePasswords = statsPasswords.st_size / PASS_LENGTH;
+    long sizePasswords = statsPasswords.st_size / PASS_LENGTH;
 
     for (int i = 0; i < sizePasswords; i++) {
         fscanf(pass, "%s", passwords[i]); //"%s%*c"
@@ -104,14 +83,22 @@ int main() {
         printf("%d : %s \n", i, dictionariesFull[2][i]);
     }
     //breaking
+
+    for(int i=0;i<countConsumer2;i++)
+    {
+        char md5[33];
+        bytes2md5(dictionariesFull[0][i], strlen(dictionariesFull[0][i]), md5);
+        checkPassword(md5);
+    }
+
     int tier=0;
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
-    for(int j=0;j<3;j++)
+    for(int j=0;j<10;j++)
     {
         for(int i=0;i<countConsumer2;i++)
         {
-            passwordBreaking(dictionariesFull[2][i], tier);
+            dictionaryAppending(dictionariesFull[0][i], tier);
         }
         tier++;
     }
@@ -184,6 +171,43 @@ void bytes2md5(const char *data, int len, char *md5buf) {
     EVP_MD_CTX_free(mdctx);
     for (i = 0; i < md_len; i++) {
         snprintf(&(md5buf[i * 2]), 16 * 2, "%02x", md_value[i]);
+    }
+}
+
+void checkPassword(char* tab)
+{
+    struct stat statsPasswords;
+    stat(filenamePasswords, &statsPasswords);
+    long sizePasswords = statsPasswords.st_size / PASS_LENGTH;
+    for (int i = 0; i < sizePasswords; ++i) {
+        if(strcmp(tab,passwords[i])==0)
+        {
+            printf("Haslo zlamane: \n");
+            //TODO register that password and send to main pthread
+            //TODO delete/register(?) that password from global array
+        }
+    }
+}
+
+void dictionaryAppending(char tab[],long tier)
+{
+    char str[BUF_SIZE];
+    long multiplicationFactor= pow(10,tier);
+    int start;
+    if(tier==0)start=0;
+    else
+    {
+        start= pow(10,tier-1);
+    }
+    char md5[33]; // 32 characters + null terminator
+    for (int i = start*10; i < 10*multiplicationFactor; ++i) {
+        sprintf(str,"%d",i); // cyfry
+        char* tmp=strdup(tab);
+        strcat(tmp,str); // po
+        bytes2md5(tmp, strlen(tmp), md5);
+        checkPassword(md5);
+        strcat(str,tmp); //przed
+        checkPassword(md5);
     }
 }
 
