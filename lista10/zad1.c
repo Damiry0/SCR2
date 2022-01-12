@@ -11,16 +11,18 @@
 
 FILE *dict, *pass;
 
-struct thread_data {
-    int thread_id;
-    const char **tab;
-    int dictionary_length;
+struct thread {
+    int id;
+    char** tab;
+    int size;
 };
 
 char *filenamePasswords = "/home/damiry/Desktop/SCR/SCR2/lista10/test-data1.txt"; // TODO relative path
 char *filenameDictionaries = "/home/damiry/Desktop/SCR/SCR2/lista10/test-dict-mini.txt";
 char passwords[BUF_SIZE][PASS_LENGTH];
 int countConsumer0 = 0, countConsumer1 = 0, countConsumer2 = 0;
+
+
 
 int countLinesInFile(FILE *fp);
 
@@ -32,7 +34,7 @@ void bytes2md5(const char *data, int len, char *md5buf);
 
 void dictionaryAppending(char tab[], long tier);
 
-void checkPassword(char *tab);
+void checkPassword(char *tab,char* passReal);
 
 void readPasswordsFile(FILE *fp) {
     if ((fp = fopen(filenamePasswords, "r")) == NULL) {
@@ -52,20 +54,27 @@ void readPasswordsFile(FILE *fp) {
 }
 
 void *producer(void *vargp) {
-    int size = countConsumer0 + countConsumer1 + countConsumer2;
-    char **tab = (char **) vargp;
+
+
+    struct thread *o= (struct thread*)vargp;
+    int size = o->size;
+    for (int i = 0; i < size; i++)
+    {
+        printf("id= %d ",o->id);
+        printf(" tab:%s \n",&o->tab[i]);
+    }
     for (int i = 0; i < size; i++) {
         char md5[33];
-        bytes2md5(tab[i], strlen(tab[i]), md5);
-        checkPassword(md5);
+        bytes2md5(&o->tab[i], strlen(&o->tab[i]), md5);
+        checkPassword(md5,&o->tab[i]);
     }
     int tier = 0;
-    while (1) {
-        for (int i = 0; i < size; i++) {
-            dictionaryAppending(tab[i], tier);
-        }
-        tier++;
-    }
+//    while (1) {
+//        for (int i = 0; i < size; i++) {
+//            dictionaryAppending(&o->tab[i], tier);
+//        }
+//        tier++;
+//    }
 }
 
 
@@ -76,8 +85,9 @@ int main() {
         exit(1);
     }
     int lines = countLinesInFile(dict);
-    char dictionaries[lines][longestLineInFile(dict)];
-    char dictionariesFull[2][lines][longestLineInFile(dict)];
+    int longestLine=longestLineInFile(dict);
+    char dictionaries[lines][longestLine];
+    char dictionariesFull[2][lines][longestLine];
     for (int i = 0; i < lines; i++) {
         fscanf(dict, "%s", dictionaries[i]);
         switch (checkLetter(dictionaries[i], lines)) {
@@ -122,17 +132,55 @@ int main() {
 //        tier++;
 //    }
 
+    printf("cos \n");
+
+    char** sorted_array_0;
+    char ** sorted_array_1;
+    char** sorted_array_2;
+    sorted_array_0 = malloc((countConsumer0) * sizeof(char*));
+    sorted_array_1= malloc((countConsumer1) * sizeof(char*));
+    sorted_array_2 = malloc((countConsumer2) * sizeof(char*));
+    for (int i = 0; i < countConsumer0; i++)
+    {
+        strcpy(&sorted_array_0[i],dictionariesFull[0][i]);
+    }
+    for (int i = 0; i < countConsumer1; i++)
+    {
+        strcpy(&sorted_array_1[i],dictionariesFull[1][i]);
+
+    }
+    for (int i = 0; i < countConsumer2; i++)
+    {
+        strcpy(&sorted_array_2[i],dictionariesFull[2][i]);
+    }
+    char *** sorted_array[3];
+    sorted_array[0]=sorted_array_0;
+    sorted_array[1]=sorted_array_1; //HAHAHAHAHAHAHAHAHAHAHHAHAHHAHAH
+    sorted_array[2]=sorted_array_2;
+
+    int array_sizes[3]={
+            countConsumer0,countConsumer1,countConsumer2
+    };
 
 //    // watki
-    pthread_t consument, producers[3];
-    // pthread_create(&consument, NULL, myThreadFun, (void *)&tid);
+ pthread_t consument, producers[3];
+ struct thread threadData[3];
+
     for (int i = 0; i < 3; ++i) {
-        pthread_create(&producers[i], NULL, producer, (void *) &dictionariesFull[i]);
+        threadData[i].id=i;
+        threadData[i].tab=sorted_array[i];
+        threadData[i].size=array_sizes[i];
+        int rc =pthread_create(&producers[i], NULL, producer, (void*)&threadData[i]);
+        if (rc) {
+            printf("ERROR; return code from pthread_create() is %d\n", rc);
+            exit(-1);
+        }
     }
 
-
-    fclose(dict);
-    fclose(pass);
+pthread_join(producers[0], NULL);
+//    fclose(dict);
+    //pthread_exit(NULL);
+   // fclose(pass);
     //  pthread_exit(NULL);
 }
 
@@ -190,14 +238,14 @@ void bytes2md5(const char *data, int len, char *md5buf) {
     }
 }
 
-void checkPassword(char *tab) {
+void checkPassword(char *tab,char* passReal) {
     struct stat statsPasswords;
     stat(filenamePasswords, &statsPasswords);
     long sizePasswords = statsPasswords.st_size / PASS_LENGTH;
     for (int i = 0; i < sizePasswords; ++i) {
         if (passwords[i][0] == '#') continue;
         if (strcmp(tab, passwords[i]) == 0) {
-            printf("Haslo zlamane: \n");
+            printf("Haslo zlamane: %s\n",passReal);
             passwords[i][0] = '#';
             //TODO register that password and send to main pthread
         }
@@ -218,9 +266,9 @@ void dictionaryAppending(char tab[], long tier) {
         char *tmp = strdup(tab);
         strcat(tmp, str); // po
         bytes2md5(tmp, strlen(tmp), md5);
-        checkPassword(md5);
+        checkPassword(md5,tmp);
         strcat(str, tmp); //przed
-        checkPassword(md5);
+        checkPassword(md5,str);
     }
 }
 
