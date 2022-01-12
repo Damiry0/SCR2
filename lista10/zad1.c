@@ -261,7 +261,7 @@ void readPasswordsFile(FILE *fp) {
 
 void* consumer(void* vargp)
 {
-    signal(SIGINT,sigHandler);
+    signal(SIGTERM,sigHandler);
     while(1)
     {
         if(brokenPasswordSet)
