@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <signal.h>
+#include <stdbool.h>
 
 #define BUF_SIZE 1000
 #define PASS_LENGTH 33
@@ -21,8 +22,11 @@ struct thread {
 char *filenamePasswords = "/home/damiry/Desktop/SCR/SCR2/lista10/test-data1.txt"; // TODO relative path
 char *filenameDictionaries = "/home/damiry/Desktop/SCR/SCR2/lista10/test-dict-mini.txt";
 char passwords[BUF_SIZE][PASS_LENGTH];
-int countConsumer0 = 0, countConsumer1 = 0, countConsumer2 = 0,brokenPasswords=0;
+int brokenPasswordsCount=0;
+bool brokenPasswordSet=false;
+char brokenDictionary[BUF_SIZE];
 
+pthread_mutex_t lock;
 
 int countLinesInFile(FILE *fp);
 
@@ -36,16 +40,17 @@ void bytes2md5(const char *data, int len, char *md5buf);
 
 void dictionaryAppending(char tab[], long tier);
 
-void checkPassword(char *tab, char *passReal);
+bool checkPassword(char *tab);
 
 void *producer(void *vargp);
 
-void* consumer(void* vargp);
+void *consumer(void* vargp);
 
 void sigHandler(int signum);
 
 
 int main() {
+    int countConsumer0 = 0, countConsumer1 = 0, countConsumer2 = 0;
     readPasswordsFile(pass);
     if ((dict = fopen(filenameDictionaries, "r")) == NULL) {
         printf("Error! opening file"); // Program exits if the file pointer returns NULL.
@@ -100,6 +105,12 @@ int main() {
     pthread_t consument, producers[3];
     struct thread threadData[3];
 
+    int rc = pthread_create(&consument, NULL, consumer, (void *) NULL);
+    if (rc) {
+        printf("ERROR; return code from pthread_create() is %d\n", rc);
+        exit(-1);
+    }
+
     for (int i = 0; i < 3; ++i) {
         threadData[i].id = i;
         threadData[i].tab = sorted_array[i];
@@ -128,8 +139,8 @@ int countLinesInFile(FILE *fp) {
 }
 
 int longestLineInFile(FILE *fp) {
-    int largest = 0, current = 0;// Line counter (result)
-    char c;  // To store a character read from file
+    int largest = 0, current = 0;
+    char c;
     if (fp == NULL) {
         printf("Error! opening file");
         exit(1);
@@ -171,19 +182,20 @@ void bytes2md5(const char *data, int len, char *md5buf) {
     }
 }
 
-void checkPassword(char *tab, char *passReal) {
+bool checkPassword(char *tab) {
     struct stat statsPasswords;
     stat(filenamePasswords, &statsPasswords);
     long sizePasswords = statsPasswords.st_size / PASS_LENGTH;
     for (int i = 0; i < sizePasswords; ++i) {
         if (passwords[i][0] == '#') continue;
         if (strcmp(tab, passwords[i]) == 0) {
-            printf("Haslo zlamane: %s   Odpowiadajacy slownik: %s \n", passReal, tab);
+            pthread_mutex_lock(&lock);
+            brokenPasswordSet=true;
             passwords[i][0] = '#';
-            brokenPasswords++;
-            //TODO register that password and send to main pthread
+            return true;
         }
     }
+    return false;
 }
 
 void dictionaryAppending(char tab[], long tier) {
@@ -200,9 +212,10 @@ void dictionaryAppending(char tab[], long tier) {
         char *tmp = strdup(tab);
         strcat(tmp, str); // po
         bytes2md5(tmp, strlen(tmp), md5);
-        checkPassword(md5, tmp);
+        if(checkPassword(md5))strcpy(brokenDictionary,tmp);
         strcat(str, tmp); //przed
-        checkPassword(md5, str);
+        bytes2md5(str, strlen(str), md5);
+        if(checkPassword(md5))strcpy(brokenDictionary,str);
     }
 }
 
@@ -216,7 +229,7 @@ void *producer(void *vargp) {
     for (int i = 0; i < size; i++) {
         char md5[33];
         bytes2md5(&o->tab[i], strlen(&o->tab[i]), md5);
-        checkPassword(md5, &o->tab[i]);
+        if(checkPassword(md5))strcpy(brokenDictionary,&o->tab[i]);
     }
     int tier = 0;
     while (1) {
@@ -247,11 +260,24 @@ void readPasswordsFile(FILE *fp) {
 void* consumer(void* vargp)
 {
     signal(SIGINT,sigHandler);
+    while(1)
+    {
+        if(brokenPasswordSet)
+        {
+            char md5[33];
+            bytes2md5(brokenDictionary, strlen(brokenDictionary), md5);
+            printf("Haslo zlamane: %s   Odpowiadajacy haslo MD5: %s \n", brokenDictionary,md5 );
+            brokenPasswordsCount++;
+            brokenPasswordSet=false;
+            pthread_mutex_unlock(&lock);
+        }
+    }
+
 }
 
 void sigHandler(int signum)
 {
-    printf("Otrzymano sygnal. \n Zlamanych hasel: %d",brokenPasswords);
+    printf("Otrzymano sygnal. \n Zlamanych hasel: %d", brokenPasswordsCount);
     exit(1);
 }
 
