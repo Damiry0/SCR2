@@ -5,18 +5,10 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <math.h>
 
 #define BUF_SIZE 1000
 #define PASS_LENGTH 33
-
-//struct leak
-
-//        {
-//            int id;
-//            char MD5_password[33];
-//            char* email;
-//            char* username;
-//        };
 
 FILE *dict, *pass;
 char *filenamePasswords = "/home/damiry/Desktop/SCR/SCR2/lista10/test-data1.txt";
@@ -27,30 +19,35 @@ int countLinesInFile(FILE *fp);
 
 int longestLineInFile(FILE *fp);
 
+int checkLetter(const char *tab, int x);
 
+void bytes2md5(const char *data, int len, char *md5buf);
 
-//void bytes2md5(const char *data, int len, char *md5buf) {
-//    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
-//    const EVP_MD *md = EVP_md5();
-//    unsigned char md_value[EVP_MAX_MD_SIZE];
-//    unsigned int md_len, i;
-//    EVP_DigestInit_ex(mdctx, md, NULL);
-//    EVP_DigestUpdate(mdctx, data, len);
-//    EVP_DigestFinal_ex(mdctx, md_value, &md_len);
-//    EVP_MD_CTX_free(mdctx);
-//    for (i = 0; i < md_len; i++) {
-//        snprintf(&(md5buf[i * 2]), 16 * 2, "%02x", md_value[i]);
-//    }
-//}
-
-int checkLetter(const char *tab, int x) {
-    for (int j = 0; j < x; ++j) {
-        if (islower(tab[0]) && (islower(tab[1]))) return 0;
-        else if (isupper(tab[0]) && (islower(tab[1]))) return 1;
-        else if (isupper(tab[0]) && (isupper(tab[1]))) return 2;
+void passwordBreaking(char tab[],int tier)
+{
+    char str[BUF_SIZE];
+    long multiplicationFactor= pow(10,tier);
+    int start;
+    if(tier==0)start=0;
+    else
+    {
+        start= pow(10,tier-1);
     }
-    return -1;
+    char md5[33]; // 32 characters + null terminator
+    for (int i = start*10; i < 10*multiplicationFactor; ++i) {
+
+            sprintf(str,"%d",i);
+            char* tmp=strdup(tab);
+            strcat(tmp,str); // po
+          //  bytes2md5(tmp, strlen(tmp), md5);
+           // if()
+          //  strcat(str,tmp); // przed
+           printf("poka:%s \n",tmp);
+    }
+    //passwordBreaking(tab,tier+1); // infite recursion
 }
+
+
 
 int main() {
 // passwords
@@ -106,8 +103,29 @@ int main() {
     for (int i = 0; i < countConsumer2; i++) {
         printf("%d : %s \n", i, dictionariesFull[2][i]);
     }
+    //breaking
+    int tier=0;
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "EndlessLoop"
+    for(int j=0;j<3;j++)
+    {
+        for(int i=0;i<countConsumer2;i++)
+        {
+            passwordBreaking(dictionariesFull[2][i], tier);
+        }
+        tier++;
+    }
+#pragma clang diagnostic pop
+//    const char *test = "Wrong99";
+//    char md5[33]; // 32 characters + null terminator
+//    bytes2md5(test, strlen(test), md5);
+//    printf("%s ======================> %s\n", test, md5);
+
+
+
+
     // watki
-    pthread_t consument;
+    //pthread_t consument;
 
 
     fclose(dict);
@@ -144,6 +162,29 @@ int longestLineInFile(FILE *fp) {
     }
     rewind(fp);
     return largest;
+}
+int checkLetter(const char *tab, int x)
+{
+    for (int j = 0; j < x; ++j) {
+        if (islower(tab[0]) && (islower(tab[1]))) return 0;
+        else if (isupper(tab[0]) && (islower(tab[1]))) return 1;
+        else if (isupper(tab[0]) && (isupper(tab[1]))) return 2;
+    }
+    return -1;
+}
+
+void bytes2md5(const char *data, int len, char *md5buf) {
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    const EVP_MD *md = EVP_md5();
+    unsigned char md_value[EVP_MAX_MD_SIZE];
+    unsigned int md_len, i;
+    EVP_DigestInit_ex(mdctx, md, NULL);
+    EVP_DigestUpdate(mdctx, data, len);
+    EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+    EVP_MD_CTX_free(mdctx);
+    for (i = 0; i < md_len; i++) {
+        snprintf(&(md5buf[i * 2]), 16 * 2, "%02x", md_value[i]);
+    }
 }
 
 
