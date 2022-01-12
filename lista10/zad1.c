@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <openssl/evp.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <ctype.h>
 #include <math.h>
@@ -11,10 +10,17 @@
 #define PASS_LENGTH 33
 
 FILE *dict, *pass;
-char *filenamePasswords = "/home/damiry/Desktop/SCR/SCR2/lista10/test-data1.txt";
-char *filenameDictionaries = "/home/damiry/Desktop/SCR/SCR2/lista10/test-dict-mini.txt";
 
+struct thread_data {
+    int thread_id;
+    const char **tab;
+    int dictionary_length;
+};
+
+char *filenamePasswords = "/home/damiry/Desktop/SCR/SCR2/lista10/test-data1.txt"; // TODO relative path
+char *filenameDictionaries = "/home/damiry/Desktop/SCR/SCR2/lista10/test-dict-mini.txt";
 char passwords[BUF_SIZE][PASS_LENGTH];
+int countConsumer0 = 0, countConsumer1 = 0, countConsumer2 = 0;
 
 int countLinesInFile(FILE *fp);
 
@@ -24,14 +30,12 @@ int checkLetter(const char *tab, int x);
 
 void bytes2md5(const char *data, int len, char *md5buf);
 
-void dictionaryAppending(char tab[],long tier);
+void dictionaryAppending(char tab[], long tier);
 
-void checkPassword(char* tab);
+void checkPassword(char *tab);
 
-
-int main() {
-// passwords
-    if ((pass = fopen(filenamePasswords, "r")) == NULL) {
+void readPasswordsFile(FILE *fp) {
+    if ((fp = fopen(filenamePasswords, "r")) == NULL) {
         printf("Error! opening file"); // Program exits if the file pointer returns NULL.
         exit(1);
     }
@@ -40,13 +44,33 @@ int main() {
     long sizePasswords = statsPasswords.st_size / PASS_LENGTH;
 
     for (int i = 0; i < sizePasswords; i++) {
-        fscanf(pass, "%s", passwords[i]); //"%s%*c"
+        fscanf(fp, "%s", passwords[i]); //"%s%*c"
     }
     for (int i = 0; i < sizePasswords; i++) {
         printf("%d : %s \n", i, passwords[i]);
     }
+}
 
-    // dictionaries
+void *producer(void *vargp) {
+    int size = countConsumer0 + countConsumer1 + countConsumer2;
+    char **tab = (char **) vargp;
+    for (int i = 0; i < size; i++) {
+        char md5[33];
+        bytes2md5(tab[i], strlen(tab[i]), md5);
+        checkPassword(md5);
+    }
+    int tier = 0;
+    while (1) {
+        for (int i = 0; i < size; i++) {
+            dictionaryAppending(tab[i], tier);
+        }
+        tier++;
+    }
+}
+
+
+int main() {
+    readPasswordsFile(pass);
     if ((dict = fopen(filenameDictionaries, "r")) == NULL) {
         printf("Error! opening file"); // Program exits if the file pointer returns NULL.
         exit(1);
@@ -54,70 +78,62 @@ int main() {
     int lines = countLinesInFile(dict);
     char dictionaries[lines][longestLineInFile(dict)];
     char dictionariesFull[2][lines][longestLineInFile(dict)];
-    int countConsumer0 = 0,countConsumer1=0,countConsumer2=0;
     for (int i = 0; i < lines; i++) {
         fscanf(dict, "%s", dictionaries[i]);
-        switch (checkLetter(dictionaries[i],lines)) {
-            case 0:
-            {
-                strcpy(dictionariesFull[0][countConsumer0],dictionaries[i]);
+        switch (checkLetter(dictionaries[i], lines)) {
+            case 0: {
+                strcpy(dictionariesFull[0][countConsumer0], dictionaries[i]);
                 countConsumer0++;
             }
-            break;
-            case 1:
-            {
-                strcpy(dictionariesFull[1][countConsumer1],dictionaries[i]);
+                break;
+            case 1: {
+                strcpy(dictionariesFull[1][countConsumer1], dictionaries[i]);
                 countConsumer1++;
             }
-            break;
-            case 2:
-            {
-                strcpy(dictionariesFull[2][countConsumer2],dictionaries[i]);
+                break;
+            case 2: {
+                strcpy(dictionariesFull[2][countConsumer2], dictionaries[i]);
                 countConsumer2++;
             }
-            break;
+                break;
         }
     }
     printf("przerwa \n");
     for (int i = 0; i < countConsumer2; i++) {
         printf("%d : %s \n", i, dictionariesFull[2][i]);
     }
+    // dictionaries
     //breaking
 
-    for(int i=0;i<countConsumer2;i++)
-    {
-        char md5[33];
-        bytes2md5(dictionariesFull[0][i], strlen(dictionariesFull[0][i]), md5);
-        checkPassword(md5);
+//    for(int i=0;i<countConsumer2;i++)
+//    {
+//        char md5[33];
+//        bytes2md5(dictionariesFull[0][i], strlen(dictionariesFull[0][i]), md5);
+//        checkPassword(md5);
+//    }
+//
+//    int tier=0;
+//    for(int j=0;j<10;j++)
+//    {
+//        for(int i=0;i<countConsumer2;i++)
+//        {
+//            dictionaryAppending(dictionariesFull[0][i], tier);
+//        }
+//        tier++;
+//    }
+
+
+//    // watki
+    pthread_t consument, producers[3];
+    // pthread_create(&consument, NULL, myThreadFun, (void *)&tid);
+    for (int i = 0; i < 3; ++i) {
+        pthread_create(&producers[i], NULL, producer, (void *) &dictionariesFull[i]);
     }
-
-    int tier=0;
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "EndlessLoop"
-    for(int j=0;j<10;j++)
-    {
-        for(int i=0;i<countConsumer2;i++)
-        {
-            dictionaryAppending(dictionariesFull[0][i], tier);
-        }
-        tier++;
-    }
-#pragma clang diagnostic pop
-//    const char *test = "Wrong99";
-//    char md5[33]; // 32 characters + null terminator
-//    bytes2md5(test, strlen(test), md5);
-//    printf("%s ======================> %s\n", test, md5);
-
-
-
-
-    // watki
-    //pthread_t consument;
 
 
     fclose(dict);
     fclose(pass);
-    return 0;
+    //  pthread_exit(NULL);
 }
 
 int countLinesInFile(FILE *fp) {
@@ -150,8 +166,8 @@ int longestLineInFile(FILE *fp) {
     rewind(fp);
     return largest;
 }
-int checkLetter(const char *tab, int x)
-{
+
+int checkLetter(const char *tab, int x) {
     for (int j = 0; j < x; ++j) {
         if (islower(tab[0]) && (islower(tab[1]))) return 0;
         else if (isupper(tab[0]) && (islower(tab[1]))) return 1;
@@ -174,39 +190,36 @@ void bytes2md5(const char *data, int len, char *md5buf) {
     }
 }
 
-void checkPassword(char* tab)
-{
+void checkPassword(char *tab) {
     struct stat statsPasswords;
     stat(filenamePasswords, &statsPasswords);
     long sizePasswords = statsPasswords.st_size / PASS_LENGTH;
     for (int i = 0; i < sizePasswords; ++i) {
-        if(strcmp(tab,passwords[i])==0)
-        {
+        if (passwords[i][0] == '#') continue;
+        if (strcmp(tab, passwords[i]) == 0) {
             printf("Haslo zlamane: \n");
+            passwords[i][0] = '#';
             //TODO register that password and send to main pthread
-            //TODO delete/register(?) that password from global array
         }
     }
 }
 
-void dictionaryAppending(char tab[],long tier)
-{
+void dictionaryAppending(char tab[], long tier) {
     char str[BUF_SIZE];
-    long multiplicationFactor= pow(10,tier);
+    long multiplicationFactor = pow(10, tier);
     int start;
-    if(tier==0)start=0;
-    else
-    {
-        start= pow(10,tier-1);
+    if (tier == 0)start = 0;
+    else {
+        start = pow(10, tier - 1);
     }
     char md5[33]; // 32 characters + null terminator
-    for (int i = start*10; i < 10*multiplicationFactor; ++i) {
-        sprintf(str,"%d",i); // cyfry
-        char* tmp=strdup(tab);
-        strcat(tmp,str); // po
+    for (int i = start * 10; i < 10 * multiplicationFactor; ++i) {
+        sprintf(str, "%d", i); // cyfry
+        char *tmp = strdup(tab);
+        strcat(tmp, str); // po
         bytes2md5(tmp, strlen(tmp), md5);
         checkPassword(md5);
-        strcat(str,tmp); //przed
+        strcat(str, tmp); //przed
         checkPassword(md5);
     }
 }
